@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Playfair Cipher Dashboard{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236d5dfc'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='monospace' font-weight='bold'>PF</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("pf_theme") || "cyber";
+        document.documentElement.setAttribute("data-theme",t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="bg-orbs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  {% block navbar %}
+  <nav class="navbar navbar-expand-lg glass-nav sticky-top">
+    <div class="container-xl">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard' if current_user else 'index') }}">
+        <span class="brand-mark">PF</span>
+        <span class="brand-text">Playfair<span class="text-accent">.</span>Cipher</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+          {% set ep = request.endpoint %}
+          {% if current_user %}
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'dashboard' }}" href="{{ url_for('dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}#encrypt" data-mode-link="encrypt"><i class="fa-solid fa-lock"></i> Encrypt</a></li>
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}#decrypt" data-mode-link="decrypt"><i class="fa-solid fa-lock-open"></i> Decrypt</a></li>
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'history' }}" href="{{ url_for('history') }}"><i class="fa-solid fa-clock-rotate-left"></i> History</a></li>
+          {% endif %}
+          <li class="nav-item"><a class="nav-link {{ 'active' if ep == 'how_it_works' }}" href="{{ url_for('how_it_works') }}"><i class="fa-solid fa-graduation-cap"></i> How It Works</a></li>
+
+          <li class="nav-item dropdown ms-lg-2">
+            <button class="btn btn-sm btn-ghost dropdown-toggle" type="button" id="themeDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Switch Theme & Colors">
+              <i class="fa-solid fa-palette text-accent"></i> <span id="currentThemeLabel">Theme</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-2 border-0 shadow-lg" aria-labelledby="themeDropdown" id="themeMenu">
+              <li><button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 py-2" data-set-theme="cyber"><span class="theme-swatch" style="background: linear-gradient(135deg, #00f2fe, #9d4edd);"></span> Cyber Neon</button></li>
+              <li><button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 py-2" data-set-theme="matrix"><span class="theme-swatch" style="background: linear-gradient(135deg, #00ff87, #60efff);"></span> Emerald Matrix</button></li>
+              <li><button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 py-2" data-set-theme="sunset"><span class="theme-swatch" style="background: linear-gradient(135deg, #ff416c, #ffa726);"></span> Sunset Flare</button></li>
+              <li><button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 py-2" data-set-theme="ocean"><span class="theme-swatch" style="background: linear-gradient(135deg, #0061ff, #60efff);"></span> Ocean Abyss</button></li>
+              <li><button type="button" class="dropdown-item rounded-2 d-flex align-items-center gap-2 py-2" data-set-theme="amethyst"><span class="theme-swatch" style="background: linear-gradient(135deg, #7928ca, #ff0080);"></span> Obsidian Amethyst</button></li>
+            </ul>
+          </li>
+
+          {% if current_user %}
+          <li class="nav-item ms-lg-1">
+            <a class="btn btn-sm btn-ghost" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+          </li>
+          {% else %}
+          <li class="nav-item ms-lg-1"><a class="btn btn-sm btn-glow" href="{{ url_for('login') }}"><i class="fa-solid fa-right-to-bracket"></i> Login</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+  {% endblock %}
+
+  <div class="toast-stack" id="toastStack" aria-live="polite">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="app-toast app-toast-{{ category }} show" role="status">
+          <i class="fa-solid {{ {'success':'fa-circle-check','danger':'fa-circle-exclamation','warning':'fa-triangle-exclamation'}.get(category, 'fa-circle-info') }}"></i>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}
+  <footer class="site-footer">
+    <div class="container-xl d-flex flex-column flex-md-row justify-content-between gap-2">
+      <span><i class="fa-solid fa-shield-halved text-accent"></i> Playfair Cipher Dashboard — Cryptography &amp; Cybersecurity Project</span>
+      <span class="text-soft">For educational purposes only. Not for securing real communication.</span>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+  {% block scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

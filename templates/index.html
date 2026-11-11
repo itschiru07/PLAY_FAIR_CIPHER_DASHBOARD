@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Playfair Cipher Dashboard{% endblock %}
+
+{% block content %}
+<section class="hero container-xl">
+  <div class="row align-items-center g-5">
+    <div class="col-lg-6">
+      <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Cryptography &amp; Cybersecurity Project</span>
+      <h1 class="display-title mt-3">Playfair <span class="gradient-text">Cipher</span></h1>
+      <p class="hero-sub">Digraph Substitution Cipher</p>
+      <p class="lead text-soft">An interactive dashboard that encrypts and decrypts messages two letters at a time using a 5 × 5 key square — and shows every rule, position and swap along the way.</p>
+      <div class="d-flex flex-wrap gap-2 mt-4">
+        {% if current_user %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-glow btn-lg"><i class="fa-solid fa-gauge-high"></i> Open Dashboard</a>
+        {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-glow btn-lg"><i class="fa-solid fa-right-to-bracket"></i> Login to Start</a>
+        {% endif %}
+        <a href="{{ url_for('how_it_works') }}" class="btn btn-ghost btn-lg"><i class="fa-solid fa-graduation-cap"></i> How It Works</a>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="glass-card hero-demo">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="chip"><i class="fa-solid fa-key"></i> Key: <span class="mono">MONARCHY</span></span>
+          <span class="chip chip-purple">5 × 5 · I/J</span>
+        </div>
+        <div class="key-square key-square-lg" aria-label="Example key square">
+          {% for ch in "MONARCHYBDEFGIKLPQSTUVWXZ" %}
+          <div class="cell {{ 'is-key' if loop.index <= 8 }}">{{ 'I/J' if ch == 'I' else ch }}</div>
+          {% endfor %}
+        </div>
+        <div class="hero-pairs mt-3">
+          <span class="pair-tag">IN → GA</span><span class="pair-tag">ST → TL</span><span class="pair-tag">RU → MZ</span>
+          <span class="pair-tag">ME → CL</span><span class="pair-tag">NT → RQ</span><span class="pair-tag">SX → XA</span>
+        </div>
+        <p class="small text-soft mb-0 mt-3"><span class="mono">INSTRUMENTS</span> → <span class="mono text-accent">GATLMZCLRQXA</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-xl pb-5">
+  <div class="row g-3">
+    {% for icon, title, text in [
+      ('fa-table-cells', '5 × 5 Key Square', 'Built live from your keyword, with I and J sharing a cell.'),
+      ('fa-arrows-left-right', 'Digraph Rules', 'Same row, same column or rectangle — each pair is labelled with its rule.'),
+      ('fa-list-ol', 'Step-by-Step', 'Every pair shown with positions, the rule applied and its result.'),
+      ('fa-clock-rotate-left', 'History & Stats', 'Every operation saved to SQLite with live dashboard statistics.')
+    ] %}
+    <div class="col-sm-6 col-lg-3">
+      <div class="glass-card feature-card h-100">
+        <div class="feature-icon"><i class="fa-solid {{ icon }}"></i></div>
+        <h3 class="h6 fw-semibold mt-3">{{ title }}</h3>
+        <p class="small text-soft mb-0">{{ text }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

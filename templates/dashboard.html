@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Playfair Cipher{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+
+  <!-- ===== Header ===== -->
+  <header class="page-head">
+    <div>
+      <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Welcome, {{ current_user }}</span>
+      <h1 class="page-title mt-2">Playfair Cipher</h1>
+      <p class="page-sub">Digraph Substitution Cipher</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="chip"><i class="fa-solid fa-table-cells"></i> 5 × 5 Key Square</span>
+      <span class="chip chip-purple"><i class="fa-solid fa-link"></i> I = J</span>
+      <span class="chip chip-cyan"><i class="fa-solid fa-xmark"></i> Filler X</span>
+    </div>
+  </header>
+
+  <!-- ===== Statistics ===== -->
+  <section class="row g-3 mb-4" aria-label="Statistics">
+    <div class="col-6 col-lg-3">
+      <div class="glass-card stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div><div class="stat-label">Total Operations</div><div class="stat-value" id="statTotal">{{ stats.total }}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="glass-card stat-card">
+        <div class="stat-icon icon-blue"><i class="fa-solid fa-lock"></i></div>
+        <div><div class="stat-label">Encrypted</div><div class="stat-value" id="statEncrypted">{{ stats.encrypted }}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="glass-card stat-card">
+        <div class="stat-icon icon-green"><i class="fa-solid fa-lock-open"></i></div>
+        <div><div class="stat-label">Decrypted</div><div class="stat-value" id="statDecrypted">{{ stats.decrypted }}</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="glass-card stat-card">
+        <div class="stat-icon icon-purple"><i class="fa-solid fa-key"></i></div>
+        <div><div class="stat-label">Avg Key Length</div><div class="stat-value" id="statAvgKey">{{ stats.avg_key_length }}</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Cipher panel + live key square ===== -->
+  <span id="decrypt" class="anchor-offset" aria-hidden="true"></span>
+  <section class="row g-4 mb-4" id="encrypt">
+    <div class="col-lg-7">
+      <div class="glass-card h-100">
+        <div class="card-head">
+          <h2 class="card-title-sm"><i class="fa-solid fa-terminal"></i> Encryption / Decryption</h2>
+          <div class="btn-group example-group" role="group" aria-label="Examples">
+            <button type="button" class="btn btn-xs btn-ghost" data-example="INSTRUMENTS|MONARCHY">Example 1</button>
+            <button type="button" class="btn btn-xs btn-ghost" data-example="HIDE THE GOLD IN THE TREE STUMP|PLAYFAIR EXAMPLE">Example 2</button>
+          </div>
+        </div>
+
+        <form id="cipherForm" novalidate onsubmit="return false;">
+          <div class="mb-3">
+            <label for="messageInput" class="form-label d-flex justify-content-between">
+              <span><i class="fa-solid fa-message"></i> Message</span>
+              <span class="text-soft small" id="letterCount">0 letters</span>
+            </label>
+            <textarea id="messageInput" class="form-control glass-input mono" rows="4" maxlength="5000"
+                      placeholder="Enter your message..."></textarea>
+            <div class="invalid-msg" id="messageError"></div>
+          </div>
+
+          <div class="mb-3">
+            <label for="keyInput" class="form-label"><i class="fa-solid fa-key"></i> Secret Key</label>
+            <input type="text" id="keyInput" class="form-control glass-input mono" maxlength="100"
+                   placeholder="Enter encryption key..." autocomplete="off" spellcheck="false">
+            <div class="invalid-msg" id="keyError"></div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-glow" id="btnEncrypt"><i class="fa-solid fa-lock"></i> Encrypt</button>
+            <button type="button" class="btn btn-glow btn-glow-green" id="btnDecrypt"><i class="fa-solid fa-lock-open"></i> Decrypt</button>
+            <button type="button" class="btn btn-ghost" id="btnClear"><i class="fa-solid fa-eraser"></i> Clear</button>
+          </div>
+          <p class="small text-soft mt-3 mb-0"><i class="fa-solid fa-circle-info"></i>
+            Spaces, digits and symbols are removed, J becomes I, and an <span class="mono">X</span> separates repeated letters in a pair.</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="glass-card h-100">
+        <div class="card-head">
+          <h2 class="card-title-sm"><i class="fa-solid fa-table-cells"></i> Key Square</h2>
+          <span class="chip chip-sm" id="keySquareLabel">No key yet</span>
+        </div>
+        <div class="key-square" id="liveSquare" aria-live="polite"></div>
+        <div class="legend mt-3">
+          <span><i class="dot dot-key"></i> From key</span>
+          <span><i class="dot dot-rest"></i> Remaining alphabet</span>
+        </div>
+        <div class="key-seq mt-3" id="keySequence"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Result ===== -->
+  <section class="mb-4 d-none" id="resultSection" aria-live="polite">
+    <div class="glass-card result-card">
+      <div class="card-head">
+        <h2 class="card-title-sm"><i class="fa-solid fa-square-check"></i> Result <span class="chip chip-sm ms-2" id="resultMode">Encryption</span></h2>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-ghost" id="btnCopy"><i class="fa-regular fa-copy"></i> Copy Result</button>
+          <button type="button" class="btn btn-sm btn-ghost" id="btnDownload"><i class="fa-solid fa-download"></i> Download Result</button>
+        </div>
+      </div>
+      <div class="result-text mono" id="resultText"></div>
+      <div class="probable d-none" id="probableBox">
+        <span class="text-soft small"><i class="fa-solid fa-wand-magic-sparkles"></i> Probable plaintext (fillers removed):</span>
+        <span class="mono fw-semibold" id="probableText"></span>
+      </div>
+      <div class="result-meta" id="resultMeta"></div>
+    </div>
+  </section>
+
+  <!-- ===== Digraph preparation ===== -->
+  <section class="mb-4 d-none" id="digraphSection">
+    <div class="glass-card">
+      <div class="card-head">
+        <h2 class="card-title-sm"><i class="fa-solid fa-scissors"></i> Digraph Preparation</h2>
+        <div class="legend">
+          <span><i class="dot dot-filler"></i> Filler added</span>
+          <span><i class="dot dot-j"></i> J → I</span>
+        </div>
+      </div>
+      <div class="prep-rows">
+        <div class="prep-row"><span class="prep-label">Original</span><span class="mono prep-val" id="prepOriginal"></span></div>
+        <div class="prep-row"><span class="prep-label">Letters only</span><span class="mono prep-val" id="prepClean"></span></div>
+        <div class="prep-row"><span class="prep-label">Digraphs</span><div class="digraph-list" id="digraphList"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Step-by-step + visualizer ===== -->
+  <section class="row g-4 mb-4 d-none" id="stepsSection">
+    <div class="col-lg-8">
+      <div class="glass-card h-100">
+        <div class="card-head">
+          <h2 class="card-title-sm"><i class="fa-solid fa-list-ol"></i> Step-by-Step Calculation</h2>
+          <span class="small text-soft d-none d-md-inline"><i class="fa-solid fa-hand-pointer"></i> Click a row to see it on the key square</span>
+        </div>
+        <div class="table-responsive glass-table-wrap">
+          <table class="table glass-table align-middle mb-0" id="stepsTable">
+            <thead>
+              <tr><th>#</th><th>Pair</th><th>Positions (row, col)</th><th>Rule</th><th>How</th><th>Result</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="glass-card visualizer sticky-lg">
+        <div class="card-head">
+          <h2 class="card-title-sm"><i class="fa-solid fa-crosshairs"></i> Rule Visualizer</h2>
+          <span class="chip chip-sm" id="vizCounter">1 / 1</span>
+        </div>
+        <div class="key-square key-square-viz" id="vizSquare"></div>
+        <div class="legend mt-3">
+          <span><i class="dot dot-in"></i> Input pair</span>
+          <span><i class="dot dot-out"></i> Output pair</span>
+        </div>
+        <div class="viz-caption mt-3" id="vizCaption"></div>
+        <div class="d-flex gap-2 mt-3">
+          <button type="button" class="btn btn-sm btn-ghost flex-fill" id="vizPrev" aria-label="Previous step"><i class="fa-solid fa-backward-step"></i></button>
+          <button type="button" class="btn btn-sm btn-glow flex-fill" id="vizPlay"><i class="fa-solid fa-play"></i> Play</button>
+          <button type="button" class="btn btn-sm btn-ghost flex-fill" id="vizNext" aria-label="Next step"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Visual flow ===== -->
+  <section class="glass-card mb-4">
+    <div class="card-head">
+      <h2 class="card-title-sm"><i class="fa-solid fa-diagram-project"></i> Encryption Flow</h2>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><i class="fa-solid fa-font"></i><strong>Plaintext</strong><small>HELLO WORLD</small></div>
+      <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="flow-step"><i class="fa-solid fa-broom"></i><strong>Clean Text</strong><small>Letters only, J → I</small></div>
+      <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="flow-step"><i class="fa-solid fa-scissors"></i><strong>Split into Pairs</strong><small>Insert X fillers</small></div>
+      <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="flow-step"><i class="fa-solid fa-table-cells"></i><strong>Build Key Square</strong><small>Key + rest of A–Z</small></div>
+      <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="flow-step"><i class="fa-solid fa-shuffle"></i><strong>Apply Rules</strong><small>Row · Column · Rectangle</small></div>
+      <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+      <div class="flow-step flow-final"><i class="fa-solid fa-lock"></i><strong>Ciphertext</strong><small>Paired output</small></div>
+    </div>
+  </section>
+
+  <!-- ===== Rules + Key square construction ===== -->
+  <section class="row g-4 mb-4">
+    <div class="col-lg-7">
+      <div class="glass-card h-100">
+        <div class="card-head"><h2 class="card-title-sm"><i class="fa-solid fa-scale-balanced"></i> The Three Rules</h2></div>
+        <div class="rule-grid">
+          <div class="rule-card rule-row">
+            <div class="rule-badge"><i class="fa-solid fa-arrows-left-right"></i> Same Row</div>
+            <p>Encrypt: letter to the <b>right</b>.<br>Decrypt: letter to the <b>left</b>.</p>
+            <small class="text-soft">Wraps from the last column to the first.</small>
+          </div>
+          <div class="rule-card rule-column">
+            <div class="rule-badge"><i class="fa-solid fa-arrows-up-down"></i> Same Column</div>
+            <p>Encrypt: letter <b>below</b>.<br>Decrypt: letter <b>above</b>.</p>
+            <small class="text-soft">Wraps from the bottom row to the top.</small>
+          </div>
+          <div class="rule-card rule-rectangle">
+            <div class="rule-badge"><i class="fa-regular fa-square"></i> Rectangle</div>
+            <p>Each letter keeps its <b>row</b> and takes the <b>other letter's column</b>.</p>
+            <small class="text-soft">Same for encryption and decryption.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="glass-card h-100">
+        <div class="card-head"><h2 class="card-title-sm"><i class="fa-solid fa-font"></i> Square Alphabet (I / J merged)</h2></div>
+        <div class="alpha-grid" id="alphaGrid"></div>
+        <p class="small text-soft mt-3 mb-0">The square holds 25 cells, so <span class="mono">J</span> is merged with <span class="mono">I</span>.
+          Key letters (highlighted) are placed first without repeats, then the rest of the alphabet in order.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Activity chart + recent ===== -->
+  <section class="row g-4">
+    <div class="col-lg-7">
+      <div class="glass-card h-100">
+        <div class="card-head"><h2 class="card-title-sm"><i class="fa-solid fa-chart-column"></i> Activity — Last 7 Days</h2></div>
+        <div class="chart-box"><canvas id="activityChart" aria-label="Operations per day chart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="glass-card h-100">
+        <div class="card-head">
+          <h2 class="card-title-sm"><i class="fa-solid fa-clock-rotate-left"></i> Recent Operations</h2>
+          <a href="{{ url_for('history') }}" class="btn btn-xs btn-ghost">View all</a>
+        </div>
+        <ul class="recent-list" id="recentList"></ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script id="initialStats" type="application/json">{{ stats | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+{% endblock %}

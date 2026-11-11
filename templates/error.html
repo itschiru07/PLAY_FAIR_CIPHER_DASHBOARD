@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} · Playfair Cipher{% endblock %}
+{% block content %}
+<div class="container-xl py-5">
+  <div class="glass-card empty-state mx-auto" style="max-width: 520px;">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <h1 class="h3 mt-2">Error {{ code }}</h1>
+    <p>{{ message }}</p>
+    <a href="{{ url_for('index') }}" class="btn btn-glow btn-sm"><i class="fa-solid fa-house"></i> Back to Home</a>
+  </div>
+</div>
+{% endblock %}

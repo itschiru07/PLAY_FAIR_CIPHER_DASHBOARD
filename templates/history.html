@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}History · Playfair Cipher{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <header class="page-head">
+    <div>
+      <span class="eyebrow"><i class="fa-solid fa-database"></i> Stored in SQLite</span>
+      <h1 class="page-title mt-2">Operation History</h1>
+      <p class="page-sub">Every encryption and decryption you have performed</p>
+    </div>
+    {% if operations or query or op_filter != 'all' %}
+    <form method="post" action="{{ url_for('clear_history') }}" onsubmit="return confirm('Delete ALL history records? This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-sm btn-danger-ghost" type="submit"><i class="fa-solid fa-trash-can"></i> Clear All</button>
+    </form>
+    {% endif %}
+  </header>
+
+  <div class="glass-card">
+    <form class="row g-2 mb-3" method="get" action="{{ url_for('history') }}" role="search">
+      <div class="col-md-7">
+        <div class="input-icon">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" name="q" value="{{ query }}" class="form-control glass-input" placeholder="Search text, key or result..." maxlength="100">
+        </div>
+      </div>
+      <div class="col-7 col-md-3">
+        <select name="type" class="form-select glass-input" aria-label="Filter by operation">
+          <option value="all" {{ 'selected' if op_filter == 'all' }}>All operations</option>
+          <option value="Encryption" {{ 'selected' if op_filter == 'Encryption' }}>Encryption</option>
+          <option value="Decryption" {{ 'selected' if op_filter == 'Decryption' }}>Decryption</option>
+        </select>
+      </div>
+      <div class="col-5 col-md-2 d-grid">
+        <button class="btn btn-glow" type="submit"><i class="fa-solid fa-filter"></i> Filter</button>
+      </div>
+    </form>
+
+    {% if operations %}
+    <div class="table-responsive glass-table-wrap">
+      <table class="table glass-table align-middle mb-0" id="historyTable">
+        <thead>
+          <tr><th>Date</th><th>Operation</th><th>Input</th><th>Key</th><th>Result</th><th class="text-end">Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for op in operations %}
+          <tr id="op-{{ op.id }}">
+            <td class="text-nowrap small">{{ op.created_at.strftime('%Y-%m-%d') }}<br><span class="text-soft">{{ op.created_at.strftime('%H:%M:%S') }}</span></td>
+            <td>
+              {% if op.operation_type == 'Encryption' %}
+              <span class="badge-op badge-enc"><i class="fa-solid fa-lock"></i> Encryption</span>
+              {% else %}
+              <span class="badge-op badge-dec"><i class="fa-solid fa-lock-open"></i> Decryption</span>
+              {% endif %}
+            </td>
+            <td class="mono truncate" title="{{ op.input_text }}">{{ op.input_text }}</td>
+            <td class="mono truncate-sm" title="{{ op.key }}">{{ op.key }}</td>
+            <td class="mono truncate text-accent" title="{{ op.result }}">{{ op.result }}</td>
+            <td class="text-end text-nowrap">
+              <button type="button" class="btn btn-xs btn-ghost" data-view-id="{{ op.id }}" aria-label="View record"><i class="fa-solid fa-eye"></i> View</button>
+              <form method="post" action="{{ url_for('delete_history', op_id=op.id) }}" class="d-inline" data-delete-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-xs btn-danger-ghost" aria-label="Delete record"><i class="fa-solid fa-trash"></i> Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="small text-soft mt-3 mb-0">{{ operations|length }} record{{ 's' if operations|length != 1 }} shown.</p>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-box-open"></i>
+      {% if query or op_filter != 'all' %}
+      <p>No records match your filter.</p>
+      <a href="{{ url_for('history') }}" class="btn btn-ghost btn-sm">Reset filter</a>
+      {% else %}
+      <p>No operations yet. Encrypt or decrypt a message to see it here.</p>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-glow btn-sm"><i class="fa-solid fa-lock"></i> Go to Dashboard</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- View modal -->
+<div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content glass-modal">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="viewModalTitle"><i class="fa-solid fa-file-lines text-accent"></i> Operation Details</h2>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="viewModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm" id="modalCopy"><i class="fa-regular fa-copy"></i> Copy Result</button>
+        <button type="button" class="btn btn-glow btn-sm" id="modalReplay"><i class="fa-solid fa-rotate"></i> Open in Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}How It Works · Playfair Cipher{% endblock %}
+
+{% set m = example.matrix %}
+{% macro mini_square(ins, outs) -%}
+<div class="key-square key-square-mini">
+  {% for row in m %}{% for ch in row %}
+  <div class="cell {{ 'is-in' if ch in ins }} {{ 'is-out' if ch in outs }}">{{ ch }}</div>
+  {% endfor %}{% endfor %}
+</div>
+{%- endmacro %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <header class="page-head">
+    <div>
+      <span class="eyebrow"><i class="fa-solid fa-graduation-cap"></i> Learn</span>
+      <h1 class="page-title mt-2">How the Playfair Cipher Works</h1>
+      <p class="page-sub">Digraph Substitution Cipher</p>
+    </div>
+  </header>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-7">
+      <div class="glass-card h-100">
+        <h2 class="card-title-sm mb-3"><i class="fa-solid fa-circle-question"></i> What is the Playfair Cipher?</h2>
+        <p>The <b>Playfair cipher</b> is a <b>digraph substitution cipher</b>: instead of replacing single letters, it encrypts <b>pairs of letters</b> using a <b>5 × 5 grid of letters</b> (the key square) built from a secret keyword.</p>
+        <p>It was invented by <b>Charles Wheatstone in 1854</b> and named after <b>Lord Lyon Playfair</b>, who promoted its use. It was used for tactical communication by the British in the Boer War and World War I.</p>
+        <p class="mb-0">Because the same letter encrypts differently depending on its partner, simple single-letter frequency analysis does not break it directly.</p>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="glass-card h-100">
+        <h2 class="card-title-sm mb-3"><i class="fa-solid fa-table-cells"></i> Key Square for “MONARCHY”</h2>
+        <div class="key-square">
+          {% for row in m %}{% for ch in row %}
+          <div class="cell {{ 'is-key' if ch in example.key_letters }}">{{ 'I/J' if ch == 'I' else ch }}</div>
+          {% endfor %}{% endfor %}
+        </div>
+        <ol class="small text-soft mt-3 mb-0 ps-3">
+          <li>Write the key letters, skipping repeats: <span class="mono">{{ example.key_letters|join(' ') }}</span></li>
+          <li>Fill the rest with the remaining alphabet in order.</li>
+          <li>I and J share one cell (25 letters total).</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-card mb-4">
+    <h2 class="card-title-sm mb-3"><i class="fa-solid fa-scissors"></i> Preparing the Plaintext</h2>
+    <div class="row g-3">
+      <div class="col-md-3 col-6"><div class="prep-tile"><b>1.</b> Remove spaces, digits &amp; symbols; use uppercase.</div></div>
+      <div class="col-md-3 col-6"><div class="prep-tile"><b>2.</b> Replace every <span class="mono">J</span> with <span class="mono">I</span>.</div></div>
+      <div class="col-md-3 col-6"><div class="prep-tile"><b>3.</b> Split into pairs; if a pair has two equal letters, insert <span class="mono">X</span> (BALLOON → BA LX LO ON).</div></div>
+      <div class="col-md-3 col-6"><div class="prep-tile"><b>4.</b> If one letter is left over, pad it with <span class="mono">X</span>.</div></div>
+    </div>
+  </div>
+
+  <h2 class="section-title"><i class="fa-solid fa-scale-balanced"></i> The Three Rules</h2>
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="glass-card h-100 rule-card rule-row">
+        <div class="rule-badge"><i class="fa-solid fa-arrows-left-right"></i> Rule 1 · Same Row</div>
+        {{ mini_square('ST', 'TL') }}
+        <p class="mt-3 mb-1"><span class="mono">ST → TL</span></p>
+        <p class="small text-soft mb-0">Encrypt: shift each letter one place <b>right</b> (T wraps around to L). Decrypt: shift <b>left</b>.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="glass-card h-100 rule-card rule-column">
+        <div class="rule-badge"><i class="fa-solid fa-arrows-up-down"></i> Rule 2 · Same Column</div>
+        {{ mini_square('ME', 'CL') }}
+        <p class="mt-3 mb-1"><span class="mono">ME → CL</span></p>
+        <p class="small text-soft mb-0">Encrypt: shift each letter one place <b>down</b> (wrap to top). Decrypt: shift <b>up</b>.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="glass-card h-100 rule-card rule-rectangle">
+        <div class="rule-badge"><i class="fa-regular fa-square"></i> Rule 3 · Rectangle</div>
+        {{ mini_square('IN', 'GA') }}
+        <p class="mt-3 mb-1"><span class="mono">IN → GA</span></p>
+        <p class="small text-soft mb-0">Each letter stays in its <b>row</b> and moves to the <b>other letter’s column</b>. Same for decryption.</p>
+      </div>
+    </div>
+  </div>
+  <div class="legend mb-4"><span><i class="dot dot-in"></i> Input pair</span><span><i class="dot dot-out"></i> Output pair</span></div>
+
+  <div class="glass-card mb-4">
+    <h2 class="card-title-sm mb-3"><i class="fa-solid fa-calculator"></i> Worked Example</h2>
+    <div class="example-line mono mb-3">
+      <div><span class="text-soft">Plaintext :</span> INSTRUMENTS</div>
+      <div><span class="text-soft">Key       :</span> MONARCHY</div>
+      <div><span class="text-soft">Digraphs  :</span> {% for s in example.steps %}{{ s.pair }} {% endfor %}</div>
+      <div><span class="text-soft">Ciphertext:</span> <span class="text-accent">{{ example.result }}</span></div>
+    </div>
+    <div class="table-responsive glass-table-wrap">
+      <table class="table glass-table align-middle mb-0">
+        <thead><tr><th>#</th><th>Pair</th><th>Positions (row, col)</th><th>Rule</th><th>Result</th></tr></thead>
+        <tbody>
+          {% for s in example.steps %}
+          <tr>
+            <td>{{ s.position }}</td>
+            <td class="mono fw-semibold">{{ s.pair }}{% if s.letters[1].filler %} <span class="mini-note">X = filler</span>{% endif %}</td>
+            <td class="mono small">{{ s.pair[0] }}({{ s.in_pos[0][0]+1 }},{{ s.in_pos[0][1]+1 }}) · {{ s.pair[1] }}({{ s.in_pos[1][0]+1 }},{{ s.in_pos[1][1]+1 }})</td>
+            <td><span class="rule-pill rule-pill-{{ s.rule }}">{{ s.rule|capitalize }}</span></td>
+            <td class="mono fw-semibold text-accent">{{ s.result }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="small text-soft mt-3 mb-0"><b>Decryption</b> applies the same square in reverse: row → shift left, column → shift up, rectangle → swap columns. Decrypting <span class="mono">{{ example.result }}</span> gives <span class="mono">INSTRUMENTSX</span>; the trailing <span class="mono">X</span> is the padding filler.</p>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="glass-card h-100 pro-card">
+        <h2 class="card-title-sm mb-3"><i class="fa-solid fa-circle-check"></i> Advantages</h2>
+        <ul class="check-list">
+          <li>Encrypts pairs of letters, hiding single-letter frequencies</li>
+          <li>600 possible digraphs make frequency analysis much harder</li>
+          <li>More secure than Caesar and simple monoalphabetic ciphers</li>
+          <li>Needs only a keyword and a 5 × 5 grid — easy to use by hand</li>
+          <li>Excellent for learning substitution and key-based cryptography</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="glass-card h-100 con-card">
+        <h2 class="card-title-sm mb-3"><i class="fa-solid fa-triangle-exclamation"></i> Limitations</h2>
+        <ul class="cross-list">
+          <li>Vulnerable to digraph frequency analysis with enough ciphertext</li>
+          <li>A pair and its reverse encrypt to reversed outputs (AB→XY means BA→YX)</li>
+          <li>A letter never encrypts to itself; repeated letters need fillers</li>
+          <li>I and J are merged and fillers add ambiguity on decryption</li>
+          <li>Not suitable for modern secure communication</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="edu-note">
+    <i class="fa-solid fa-graduation-cap"></i>
+    <div><b>This application is intended for educational purposes.</b> Use modern, vetted algorithms such as AES for protecting real data.</div>
+  </div>
+</div>
+{% endblock %}
